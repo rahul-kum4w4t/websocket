@@ -1,7 +1,43 @@
 <html>
 
 <head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" rel="stylesheet">
     <style>
+        .alert-message-container {
+            position: fixed;
+            top: 0px;
+            right: 0px;
+            display: flex;
+            flex-direction: column-reverse;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            height: 90vh;
+            justify-content: flex-start;
+            align-items: stretch;
+        }
+
+        .alert-message-container>* {
+            flex: 1 1 auto;
+            padding: 10px;
+            line-height: 50px;
+            max-height: 60px;
+            box-shadow: 0px 0px 0.5px 1px orangered;
+            margin: 5px;
+            border-radius: 10px;
+            font-family: monospace, Arial, Helvetica, sans-serif;
+            transition: all 1s linear;
+        }
+
+        .alert-message-container>*:before {
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            font-size: 25px;
+            color: orangered;
+            content: "\f0f3";
+            padding: 10px;
+            line-height: 50px;
+        }
+
         .pop-message {
             position: fixed;
             top: 30px;
@@ -17,7 +53,7 @@
             border: none;
             padding: 20px;
             font-family: monospace;
-            padding:15px 20px;
+            padding: 15px 20px;
             color: white;
             font-size: 15px;
             cursor: pointer;
@@ -27,7 +63,7 @@
         }
 
         input:disabled {
-            background-color: rgb(50,50,50);
+            background-color: rgb(50, 50, 50);
         }
 
         input:not(:disabled):hover {
@@ -38,6 +74,7 @@
         let URL = "wss://5p2fsv4mfj.execute-api.us-east-1.amazonaws.com/production";
         const popUpTimeout = 2000;
         let socket = null;
+        let alertContainer = null;
 
         let popUpElem = null;
 
@@ -49,7 +86,7 @@
 
         function onSocketOpen(event) {
             socket.send(JSON.stringify({
-                action : "subscribe",
+                action: "subscribe",
                 user: "ftcc01"
             }));
             popUpElem.textContent = "Socket connection open";
@@ -73,12 +110,24 @@
         }
 
         function onSocketMessage(event) {
+
             console.log(event.data);
+            if (event.data) {
+                let data = JSON.parse(event.data);
+                if (data.body) {
+                    const node = document.createElement("span");
+                    node.innerHTML = data.body;
+                    alertContainer.appendChild(node);
+                    setTimeout(() => {
+                        node.remove();
+                    },3000);
+                }
+            }
         }
 
         function connect(event) {
             if (socket == null || (socket && socket.readyState !== WebSocket.OPEN)) {
-                event.target.value="Connecting...";
+                event.target.value = "Connecting...";
                 event.target.disabled = true;
                 socket = new WebSocket(URL);
                 socket.addEventListener('open', onSocketOpen);
@@ -90,7 +139,7 @@
 
         function disconnect(event) {
             if (socket) {
-                event.target.value="disconnecting...";
+                event.target.value = "disconnecting...";
                 event.target.disabled = true;
                 socket.close();
             }
@@ -98,12 +147,15 @@
 
         window.onload = function () {
             popUpElem = document.querySelector(".pop-message");
+            alertContainer = document.querySelector(".alert-message-container");
         }
     </script>
 </head>
 
 <body>
     <div class="pop-message">Connection Successful</div>
+    <div class="alert-message-container">
+    </div>
     <input id="connect" type=button onClick="connect(event)" value='Connect websocket' />
     <input id="disconnect" type=button onClick="disconnect(event)" value='websocket disconnected' disabled />
 </body>
