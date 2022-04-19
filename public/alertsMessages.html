@@ -1,0 +1,111 @@
+<html>
+
+<head>
+    <style>
+        .pop-message {
+            position: fixed;
+            top: 30px;
+            right: -100%;
+            padding: 10px 10px 10px 15px;
+            transition: all 500ms linear;
+            color: white;
+            border-radius: 50px 0px 0px 50px;
+        }
+
+        input {
+            background-color: orangered;
+            border: none;
+            padding: 20px;
+            font-family: monospace;
+            padding:15px 20px;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 2px 2px 1px 1px grey;
+            margin-right: 20px;
+            text-transform: capitalize;
+        }
+
+        input:disabled {
+            background-color: rgb(50,50,50);
+        }
+
+        input:not(:disabled):hover {
+            box-shadow: 3px 3px 3px 1px grey;
+        }
+    </style>
+    <script>
+        let URL = "wss://5p2fsv4mfj.execute-api.us-east-1.amazonaws.com/production";
+        const popUpTimeout = 2000;
+        let socket = null;
+
+        let popUpElem = null;
+
+        function resetPopup() {
+            popUpElem.style = "right:none;background-color:none;"
+            popUpElem.textContent = "";
+
+        }
+
+        function onSocketOpen(event) {
+            socket.send(JSON.stringify({
+                action : "subscribe",
+                user: "ftcc01"
+            }));
+            popUpElem.textContent = "Socket connection open";
+            popUpElem.style = "right:0px;background-color:green;"
+            document.getElementById("connect").value = "websocket Connected";
+            document.getElementById("disconnect").value = "disconnect websocket";
+            document.getElementById("disconnect").disabled = false;
+            document.getElementById("connect").disabled = true;
+            setTimeout(resetPopup, popUpTimeout);
+        }
+
+        function onSocketClose(event) {
+            console.log('WebSocket error: ', event.reason);
+            popUpElem.textContent = "Socket connection closed";
+            popUpElem.style = "right:0px;background-color:red;";
+            document.getElementById("connect").value = "Connect websocket";
+            document.getElementById("connect").disabled = false;
+            document.getElementById("disconnect").value = "websocket disconnected";
+            document.getElementById("disconnect").disabled = true;
+            setTimeout(resetPopup, popUpTimeout);
+        }
+
+        function onSocketMessage(event) {
+            console.log(event.data);
+        }
+
+        function connect(event) {
+            if (socket == null || (socket && socket.readyState !== WebSocket.OPEN)) {
+                event.target.value="Connecting...";
+                event.target.disabled = true;
+                socket = new WebSocket(URL);
+                socket.addEventListener('open', onSocketOpen);
+                socket.addEventListener('close', onSocketClose);
+                socket.addEventListener('error', onSocketClose);
+                socket.addEventListener('message', onSocketMessage);
+            }
+        }
+
+        function disconnect(event) {
+            if (socket) {
+                event.target.value="disconnecting...";
+                event.target.disabled = true;
+                socket.close();
+            }
+        }
+
+        window.onload = function () {
+            popUpElem = document.querySelector(".pop-message");
+        }
+    </script>
+</head>
+
+<body>
+    <div class="pop-message">Connection Successful</div>
+    <input id="connect" type=button onClick="connect(event)" value='Connect websocket' />
+    <input id="disconnect" type=button onClick="disconnect(event)" value='websocket disconnected' disabled />
+</body>
+
+</html>
